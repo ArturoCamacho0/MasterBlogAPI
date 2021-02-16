@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CategoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -18,3 +19,4 @@ Route::get('user/{id}', [App\Http\Controllers\UserController::class, 'detail']);
 
 
 // Categorias
+Route::resource('category', CategoryController::class);
