@@ -134,17 +134,25 @@ class UserController extends Controller
             unset($params_array['created_at']);
             unset($params_array['remember_token']);
 
-            // Actualizar el usuario
-            User::where('id', $user_token->sub)->update($params_array);
+            if($validate->fails()){
+                $data = array(
+                    'status' => 'error',
+                    'code' => 400,
+                    'errors' => $validate->errors()
+                );
+            }else{
+                // Actualizar el usuario
+                User::where('id', $user_token->sub)->update($params_array);
 
 
-            $data = array(
-                'status' => 'succes',
-                'code' => 200,
-                'message' => 'El usuario se ha actualizado correctamente',
-                'user' => $user_token,
-                'changes' => $params_array
-            );
+                $data = array(
+                    'status' => 'succes',
+                    'code' => 200,
+                    'message' => 'El usuario se ha actualizado correctamente',
+                    'user' => $user_token,
+                    'changes' => $params_array
+                );
+            }
 
         }else{
             $data = array(
