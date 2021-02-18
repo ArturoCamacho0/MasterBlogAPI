@@ -11,15 +11,11 @@ class Post extends Model
 
     protected $table = 'posts';
 
+    public function category(){
+        return $this->belongsTo(Category::class);
+    }
+
     public function user(){
-        $this->hasMany('users');
-    }
-
-    public function categories(){
-        return $this->belongsTo('App\Category', 'category_id');
-    }
-
-    public function users(){
-        return $this->belongsTo('App\User', 'user_id');
+        return $this->belongsTo(User::class);
     }
 }

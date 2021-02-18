@@ -18,5 +18,22 @@ Route::get('/user/avatar/{filename}', [App\Http\Controllers\UserController::clas
 Route::get('user/{id}', [App\Http\Controllers\UserController::class, 'detail']);
 
 
-// Categorias
+// CATEGORIAS
 Route::resource('category', CategoryController::class);
+
+// POSTS
+Route::resource('/post', App\Http\Controllers\PostController::class)
+    ->middleware(\App\Http\Middleware\ApiAuthMiddleware::class, [
+        'except' => [
+            'index',
+            'show',
+            'getImage',
+            'getPostsByCategory',
+            'getPostsByUser'
+        ]
+    ]
+);
+Route::post('/post/upload', [App\Http\Controllers\PostController::class, 'upload']);
+Route::get('post/image/{filename}', [App\Http\Controllers\PostController::class, 'getImage']);
+Route::get('post/category/{id}', [App\Http\Controllers\PostController::class, 'getPostsByCategory']);
+Route::get('post/user/{id}', [App\Http\Controllers\PostController::class, 'getPostsByUser']);
