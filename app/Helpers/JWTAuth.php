@@ -39,7 +39,7 @@ class JWTAuth{
                 "sub" => $user->id,
                 "name" => $user->name,
                 "surname" => $user->surname,
-                "emai" => $user->email,
+                "email" => $user->email,
                 "iat" => time(),
                 "exp" => time() + (7 * 24 * 60 * 60)
             );
@@ -48,11 +48,12 @@ class JWTAuth{
 
             if(!is_null($get_token)){
                 $decoded = JWT::decode($jwt, $this->key, [ 'HS256' ]);
+                $user = User::findOrFail($decoded->sub);
 
                 $data = array(
                     "status" => "succes",
                     "code" => 200,
-                    "user" => $decoded
+                    "user" => $user
                 );
             }else{
                 $data = array(

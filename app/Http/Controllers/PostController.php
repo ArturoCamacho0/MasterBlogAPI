@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\File;
 class PostController extends Controller
 {
     public function index(){
-        $posts = Post::all()->load(['category', 'user']);
+        $posts = Post::orderBy('updated_at', 'DESC')->get()->load(['category', 'user']);
 
         if(empty($posts)){
             $data = array(
@@ -108,7 +108,7 @@ class PostController extends Controller
 
 
     public function update($id, Request $request){
-        $user = $this->getIdentity($request->header('Authorization', null));
+        $user = $this->getIdentity($request);
         $post = Post::find($id);
 
         $json = $request->input('json', null);
@@ -131,7 +131,9 @@ class PostController extends Controller
                 unset($params_array['id']);
                 unset($params_array['user_id']);
                 unset($params_array['created_at']);
+                unset($params_array['updated_at']);
                 unset($params_array['user']);
+                unset($params_array['category']);
 
                 if($validate->fails()){
                     $data = array(
@@ -163,7 +165,7 @@ class PostController extends Controller
 
 
     public function destroy($id, Request $request){
-        $user = $this->getIdentity($request->header('Authorization', null));
+        $user = $this->getIdentity($request);
         $post = Post::find($id);
 
         if(empty($post)){
@@ -175,7 +177,7 @@ class PostController extends Controller
         }else{
             if($user->sub == $post->user_id){
                 $post->delete();
-    
+
                 $data = array(
                     'status' => 'success',
                     'code' => 200,
@@ -233,23 +235,16 @@ class PostController extends Controller
 
     public function getImage($filename){
         $isset = Storage::disk('images')->exists($filename);
-
         if($isset){
             $file = Storage::disk('images')->get($filename);
-
-            $data = array(
-                'image' => base64_encode($file),
-                'code' => 200
-            );
+            return new \Symfony\Component\HttpFoundation\Response($file, 200);
         }else{
-            $data = array(
-                'status' => 'Error',
-                'code' => 404,
-                'message' => 'No se ha encontrado la imagen'
-            );
+            return response()->json(array(
+                'status' => 'error',
+                'code' => 200,
+                'message' => 'La imagen no existe'
+            ), 404);
         }
-
-        return response()->json($data, $data['code']);
     }
 
 
@@ -264,8 +259,9 @@ class PostController extends Controller
                 'message' => 'No hay posts guardados'
             );
         }else{
+
             $data = array(
-                'status' => 'succcess',
+                'status' => 'success',
                 'code' => 200,
                 'posts' => $posts->load(['user', 'category'])
             );
@@ -274,6 +270,28 @@ class PostController extends Controller
         return response()->json($data, $data['code']);
     }
 
+
+
+
+    public function countPostsByCategory($id){
+        $posts_count = Post::where('category_id', $id)->count();
+
+        if(empty($posts)){
+            $data = array(
+                'status' => 'error',
+                'code' => 404,
+                'message' => 'No hay posts guardados'
+            );
+        }else{
+            $data = array(
+                'status' => 'success',
+                'code' => 200,
+                'numberOfPosts' => $posts
+            );
+        }
+
+        return response()->json($data, $data['code']);
+    }
 
 
     public function getPostsByUser($id){

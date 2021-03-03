@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon;
 use App\Helpers\JWTAuth;
 use Illuminate\Http\Request;
 use App\Models\User;
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use PHPUnit\Exception;
 
 class UserController extends Controller
 {
@@ -97,7 +99,12 @@ class UserController extends Controller
                 'errors' => $validate->errors()
             );
         }else{
-            $data = json_decode($jwt->signup($email, $password), true);
+            if(!empty($params->gettoken)){
+                $data = json_decode($jwt->signup($email, $password, true), true);
+
+            }else{
+                $data = json_decode($jwt->signup($email, $password), true);
+            }
         }
 
         // Devolver los datos o token
@@ -120,11 +127,12 @@ class UserController extends Controller
             // Sacar el usuario identificado
             $user_token = $jwt->check_token($token, true);
 
+
             // Validar los datos
             $validate = Validator::make($params_array, [
                 'name' => 'required|alpha',
-                'surname' => 'required|alpha',
-                'email' => 'required|email|unique:users,'.$user_token->sub
+                'surname' => 'required|regex:/^[\pL\s\-]+$/u',
+                'email' => 'required|email|unique:users,email,'.$user_token->sub
             ]);
 
             // Limpiar datos
@@ -133,6 +141,7 @@ class UserController extends Controller
             unset($params_array['password']);
             unset($params_array['created_at']);
             unset($params_array['remember_token']);
+            unset($params_array['updated_at']);
 
             if($validate->fails()){
                 $data = array(
@@ -145,11 +154,13 @@ class UserController extends Controller
                 User::where('id', $user_token->sub)->update($params_array);
 
 
+                $user = User::findOrFail($user_token->sub);
+
                 $data = array(
                     'status' => 'succes',
                     'code' => 200,
                     'message' => 'El usuario se ha actualizado correctamente',
-                    'user' => $user_token,
+                    'user' => $user,
                     'changes' => $params_array
                 );
             }
@@ -204,23 +215,16 @@ class UserController extends Controller
 
     public function getImage($filename){
         $isset = Storage::disk('users')->exists($filename);
-
         if($isset){
             $file = Storage::disk('users')->get($filename);
-
-            $data = array(
-                'image' => base64_encode($file),
-                'code' => 200
-            );
+            return new \Symfony\Component\HttpFoundation\Response($file, 200);
         }else{
-            $data = array(
-                'status' => 'Error',
-                'code' => 404,
-                'message' => 'No se ha encontrado la imagen'
-            );
+            return response()->json(array(
+                'status' => 'error',
+                'code' => 200,
+                'message' => 'La imagen no existe'
+            ), 404);
         }
-
-        return response()->json($data, $data['code']);
     }
 
 
